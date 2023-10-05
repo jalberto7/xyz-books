@@ -1,1 +1,208 @@
-# xyz-books
+# xyz-books instructions
+<!-- 
+    >>>>>>>>>> RUN GOLANG PROJECT: 
+    1. Build the project
+        :~$ go build
+
+    2. Run executable application
+        :~$ ./xyz-books
+
+    3. Make sure before run the project in your local, configure/setup the database connection in the (.env) file, and refer to the database instruction for creating the databases and tables.
+        example: DB_URL="host=localhost user=joemar password=1234 dbname=xyzbooks port=5432 sslmode=disable"
+
+    4. I also install the following dependencies
+        4a. go get github.com/joho/godotenv
+
+        4b. go get -u github.com/gin-gonic/gin
+
+        4c. go get -u gorm.io/gorm
+
+        4d. go get -u gorm.io/driver/postgres
+ -->
+
+ <!-- 
+    >>>>>>>>>> TESTING
+    1. Please refer to the "books.postman_collection.json" file. And drag and drop to the postman collection.
+ -->
+
+<!-- 
+    >>>>>>>>>> DATABASE INSTRUCTIONS (POSTGRESQL)
+    1. Install the postgresql in ubunu.
+        :~$ sudo apt-get update
+        :~$ sudo apt show postgresql
+        :~$ sudo apt install postgresql postgresql-contrib
+        :~$ sudo -u postgres psql -> To verify whether the PostgreSQL installation is successful.
+
+    2. After installing the postgresql create a user and database.
+        :~$ sudo -u postgres createuser <username>
+        :~$ sudo -u postgres createdb xyzbooks
+
+    3. Log to psql
+        :~$ sudo -u postgres psql
+
+    3. List all tables
+        :~$ \list
+    
+    4. Alter your username by giving a password
+        :~$ alter user <usernam> with encrypted password 'password';
+
+    5. Grant privileges to the database
+        :~$ grant all privileges on database xyzbooks to <username>;
+
+    6. Now you can go now to your created database
+        :~$ \c xyzbooks
+
+    7. You can now create table. But in this project I refer to the documentation given.
+    And you can also use the following query I create. And I also populated base on example table.
+
+        -----------------------------------------------------------------------------------------------------------
+        For author table: 
+        >>>	DESCRIPTION: The "author" table has an "author_id" column as the primary key, 
+        along with columns for "first_name", "last_name", and "middle_name". 
+        The first and last names are marked as NOT NULL, while the middle name is optional.
+        
+        >>>	QUERY:
+        CREATE TABLE author (
+            author_id SERIAL PRIMARY KEY,
+            first_name VARCHAR(255) NOT NULL,
+            last_name VARCHAR(255) NOT NULL,
+            middle_name VARCHAR(255)
+        );
+
+        >>> POPULATE VALUES: 
+        INSERT INTO author(first_name, last_name, middle_name) 
+        VALUES('Joel', 'Hartse', ''), 
+        ('Hannah', 'Templer', 'P'), 
+        ('Marguerite', 'Duras', 'Z'), 
+        ('Kingsley', 'Amis', ''), 
+        ('Fannie Peters', 'Flagg,', ''), 
+        ('Camille Byron', 'Paglia', ''), 
+        ('Rainer Steel', 'Rilke', '');
+
+        -----------------------------------------------------------------------------------------------------------
+        For book table:
+        >>>	DESCRIPTION: The "book" table has a "book_id" column as the primary key, 
+        along with columns for "title", "isbn", "list_price", "publication_year", "publisher_id", "image_url", and "edition". 
+        The "isbn" column has a unique constraint to ensure uniqueness, 
+        and the "list_price" column stores the price as a decimal with a precision of 10 and scale of 2. 
+        The foreign key "publisher_id" references the "publisher" table.
+
+        >>> QUERY
+        CREATE TABLE book (
+            book_id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            isbn13 VARCHAR(13) UNIQUE,
+            isbn10 VARCHAR(10) UNIQUE,
+            list_price DECIMAL(10, 2) NOT NULL,
+            publication_year INTEGER NOT NULL,
+            publisher_id INT REFERENCES publisher(publisher_id),
+            image_url VARCHAR(255),
+            edition VARCHAR(255)
+        );
+
+        >>> POPULATE VALUES: 
+        INSERT INTO book(title, isbn13, isbn10, publication_year, publisher_id, edition, list_price) 
+        values('American Elf', '9781891830853', '1891830856', 2004, 1, 'Book 2', 1000), 
+        ('Cosmoknights', '9781603094542', '1603094547', 2019, 2, 'Book 1', 2000), 
+        ('Essex County', '9781603090384', '160309038X', 1990, 3, '', 500), 
+        ('Hey, Mister (Vol 1)', '9781891830020', '1891830023', 2000, 3, 'After School Special', 1200), 
+        ('The Underwater Welder', '9781603093989', '1603093982', 2022, 4, '', 3000);
+
+        -----------------------------------------------------------------------------------------------------------
+        For publisher table
+        >>>	DESCRIPTION: The "publisher" table has a "publisher_id" column as the primary key, along with a "publisher_name" column.
+	
+        >>> QUERY
+        CREATE TABLE publisher (
+            publisher_id SERIAL PRIMARY KEY,
+            publisher_name VARCHAR(255) NOT NULL
+        );
+
+        >>> POPULATE VALUES: 
+        INSERT INTO publisher(publisher_name) VALUES('Paste Magazine'), ('Publishers Weekly'), ('Graywolf Press'), ('McSweeneys');
+
+        -----------------------------------------------------------------------------------------------------------
+        For author_book:
+        >>>	DESCRIPTION: The "author_book" table is a junction table that represents the many-to-many relationship between authors and books. 
+        It has foreign keys referencing the "author" and "book" tables, creating a composite primary key using the "author_id" and "book_id" columns.
+        
+        >>> QUERY
+        CREATE TABLE author_book (
+            author_id INT REFERENCES author(author_id),
+            book_id INT REFERENCES book(book_id),
+            PRIMARY KEY (author_id, book_id)
+        );
+
+        >>> POPULATE VALUES: Finally, establish the relationships between the authors and the book in the "author_book" table:
+        INSERT INTO author_book (author_id, book_id)
+        VALUES
+        (1, (SELECT book_id FROM book WHERE title = 'American Elf')),
+        (2, (SELECT book_id FROM book WHERE title = 'American Elf')),
+        (3, (SELECT book_id FROM book WHERE title = 'American Elf')),
+        (4, (SELECT book_id FROM book WHERE title = 'Cosmoknights')),
+        (4, (SELECT book_id FROM book WHERE title = 'Essex County')),
+        (2, (SELECT book_id FROM book WHERE title = 'Hey, Mister (Vol 1)')),
+        (5, (SELECT book_id FROM book WHERE title = 'Hey, Mister (Vol 1)')),
+        (6, (SELECT book_id FROM book WHERE title = 'Hey, Mister (Vol 1)')),
+        (7, (SELECT book_id FROM book WHERE title = 'The Underwater Welder'));
+
+        -----------------------------------------------------------------------------------------------------------
+        NOTE: With these SQL statements, you insert the authors into the "author" table, insert the book into the "book" table, and then associate the authors with the book in the "author_book" table by inserting the corresponding author_id and book_id values.
+
+    8. After you create the tables, please check the schema for more information, using the following syntax:
+        command: \d author, \d book, \d publisher
+
+        xyzbooks=# \d author
+        Output:
+               Column   |          Type          | Collation | Nullable |                  Default                  
+            -------------+------------------------+-----------+----------+-------------------------------------------
+            author_id   | integer                |           | not null | nextval('author_author_id_seq'::regclass)
+            first_name  | character varying(255) |           | not null | 
+            last_name   | character varying(255) |           | not null | 
+            middle_name | character varying(255) |           |          | 
+            Indexes:
+                "author_pkey" PRIMARY KEY, btree (author_id)
+            Referenced by:
+                TABLE "author_book" CONSTRAINT "author_book_author_id_fkey" FOREIGN KEY (author_id) REFERENCES author(author_id)
+
+        xyzbooks=# \d book
+        Output:
+                Column       |          Type          | Collation | Nullable |                Default                
+            ------------------+------------------------+-----------+----------+---------------------------------------
+            book_id          | integer                |           | not null | nextval('book_book_id_seq'::regclass)
+            title            | character varying(255) |           | not null | 
+            isbn13           | character varying(13)  |           |          | 
+            list_price       | numeric(10,2)          |           | not null | 
+            publication_year | integer                |           | not null | 
+            publisher_id     | integer                |           |          | 
+            image_url        | character varying(255) |           |          | 
+            edition          | character varying(255) |           |          | 
+            isbn10           | character varying(10)  |           |          | 
+            Indexes:
+                "book_pkey" PRIMARY KEY, btree (book_id)
+                "book_isbn_key" UNIQUE CONSTRAINT, btree (isbn13)
+            Foreign-key constraints:
+                "book_publisher_id_fkey" FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)
+            Referenced by:
+                TABLE "author_book" CONSTRAINT "author_book_book_id_fkey" FOREIGN KEY (book_id) REFERENCES book(book_id)
+
+        xyzbooks=# \d publisher
+        Output:
+            Column     |          Type          | Collation | Nullable |                     Default                     
+        ----------------+------------------------+-----------+----------+-------------------------------------------------
+        publisher_id   | integer                |           | not null | nextval('publisher_publisher_id_seq'::regclass)
+        publisher_name | character varying(255) |           | not null | 
+        Indexes:
+            "publisher_pkey" PRIMARY KEY, btree (publisher_id)
+        Referenced by:
+            TABLE "book" CONSTRAINT "book_publisher_id_fkey" FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)
+
+    9. If you notice the structure of table's, there is a Default value in every id of table. For that make sure to grant privileges to your username, so that you can get the potential to update or delete the value's from table.
+    This is the following query: 
+        xyzbooks=# GRANT ALL PRIVILEGES ON SEQUENCE author_author_id_seq to <username>;
+        xyzbooks=# GRANT ALL PRIVILEGES ON SEQUENCE book_book_id_seq to <username>;
+        xyzbooks=# GRANT ALL PRIVILEGES ON SEQUENCE publisher_publisher_id_seq to <username>;
+
+    10. And thats all.
+
+ -->
